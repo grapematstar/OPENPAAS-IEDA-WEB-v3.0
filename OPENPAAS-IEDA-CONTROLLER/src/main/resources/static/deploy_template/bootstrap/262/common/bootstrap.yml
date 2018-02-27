@@ -4,12 +4,17 @@ releases:
 - name: bosh
   version: ((meta.bosh-release-version))
   url: ((meta.bosh-release-url))
-  <<: (( merge ))
+- name: bosh-openstack-cpi
+  version: (( meta.bosh-openstack-cpi-version ))
+  url: (( meta.bosh-openstack-cpi-url ))
 
 resource_pools:
 - name: vms
   network: private
-  <<: (( merge ))
+  stemcell: 
+    url: ((meta.stemcell-url))
+  cloud_properties: 
+    instance_type: m1.medium
   env:
     bosh:
       password: (( meta.vcap-password ))
@@ -19,13 +24,15 @@ disk_pools:
   disk_size: 40960
 
 networks:
-- name: private
-  type: manual
+- name: public
+  type: vip
   subnets:
   - range: (( meta.private-network-range ))
-    gateway: (( meta.private-network-gateway ))
+    gateway: &gateway
+      (( meta.private-network-gateway ))
     static: [(( meta.private-static-ips ))]
-    dns: [(( meta.private-network-dns ))]
+    dns: &dns
+      [(( meta.private-network-dns ))]
 
 instance_groups:
 - name: bosh
@@ -41,8 +48,10 @@ instance_groups:
   resource_pool: vms
   persistent_disk_pool: disks
   networks:
-  - name: private
-    static_ips: [(( meta.private-static-ips ))]
+  - name: public
+    static_ips: [(( meta.external_ip ))]
+    dns: *dns
+    gateway: *gateway
   properties:
     nats:
       address: (( meta.private-static-ips ))
@@ -80,6 +89,8 @@ instance_groups:
         user: agent
         password: ((blobstore_agent_password))
     director:
+      default_ssh_options:
+        gateway_host: (( meta.external_ip ))
       address: 127.0.0.1
       name: (( meta.director-name ))
       db: *db
@@ -131,10 +142,19 @@ instance_groups:
       password: ((registry_password))
       port: 25777
       endpoint: http://registry:((registry_password))@(( meta.private-static-ips )):25777
-    <<: (( merge ))
+    openstack: &openstack
+      auth_url: (( meta.auth-url ))
+      username: (( meta.username ))
+      api_key: (( meta.api-key ))
+      domain: (( meta.domain ))
+      project: (( meta.project ))
+      region: (( meta.region ))
+      default_key_name: (( meta.default-key-name ))
+      default_security_groups: (( meta.default-security-groups ))
+      human_readable_vm_names: true
 
 cloud_provider:
-  mbus: https://mbus:((mbus_bootstrap_password))@(( meta.private-static-ips )):6868
+  mbus: https://mbus:((mbus_bootstrap_password))@(( meta.external_ip )):6868
   cert: ((mbus_bootstrap_ssl))
   properties:
     agent: {mbus: "https://mbus:((mbus_bootstrap_password))@0.0.0.0:6868"}
@@ -144,11 +164,11 @@ cloud_provider:
     name: openstack_cpi
     release: bosh-openstack-cpi
   ssh_tunnel:
-    host: (( meta.public-static-ips.[0] ))
+    host: (( meta.external_ip ))
     port: 22
     user: vcap
     private_key: (( meta.private-key ))
-  <<: (( merge ))
+  openstack: *openstack
 
 variables:
 - name: admin_password
@@ -177,15 +197,15 @@ variables:
   type: certificate
   options:
     ca: default_ca
-    common_name: (( meta.private-static-ips ))
-    alternative_names: [(( meta.private-static-ips ))]
+    common_name: (( meta.external_ip ))
+    alternative_names: [(( meta.external_ip ))]
 
 - name: director_ssl
   type: certificate
   options:
     ca: default_ca
-    common_name: (( meta.private-static-ips ))
-    alternative_names: [(( meta.private-static-ips ))]
+    common_name: (( meta.external_ip ))
+    alternative_names: [(( meta.external_ip ))]
 
 - name: nats_ca
   type: certificate
