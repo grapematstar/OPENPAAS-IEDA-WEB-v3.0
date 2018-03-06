@@ -2,7 +2,7 @@ meta: ~
 
 releases:
 - name: bosh
-  version: ((meta.bosh-release-version))
+  version: ((bosh-release-version))
   url: ((meta.bosh-release-url))
 - name: bosh-openstack-cpi
   version: (( meta.bosh-openstack-cpi-version ))
