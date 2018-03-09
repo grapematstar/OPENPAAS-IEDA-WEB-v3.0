@@ -239,8 +239,7 @@ public class StemcellManagementService {
          String info = null;
          boolean flag = false;
          try{
-             //wget 실행
-             ProcessBuilder builder = new ProcessBuilder("wget", "--spider","-d", "-P", TMPDIRECTORY, "--content-disposition", dto.getDownloadLink());
+             ProcessBuilder builder = new ProcessBuilder("/usr/local/bin/wget", "--spider","-d", "-P", TMPDIRECTORY, "--content-disposition", dto.getDownloadLink());
              builder.redirectErrorStream(true);
              process = builder.start();
              inputStream = process.getInputStream();
@@ -265,6 +264,7 @@ public class StemcellManagementService {
                  }
              }
          }catch(IOException e){
+        	 	e.printStackTrace();
              throw new CommonException(message.getMessage("common.internalServerError.exception.code", null, Locale.KOREA),
                      message.getMessage("common.internalServerError.message", null, Locale.KOREA), HttpStatus.INTERNAL_SERVER_ERROR);
          }finally {

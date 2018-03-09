@@ -483,6 +483,16 @@ function clearMainPage() {
 $(window).resize(function() {
     setLayoutContainerHeight();
 });
+
+/********************************************************
+ * 설명 : Key-File 브라우저 선택
+ * 기능 : openBrowse
+ *********************************************************/
+function openBrowse(){
+    if($('.w2ui-msg-body #browse').attr('disabled') == "disabled") return;    
+    $(".w2ui-msg-body input[name='keyPathFileName']").click();
+}
+
 </script>
 
 
